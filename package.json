@@ -1,0 +1,7 @@
+{
+  "name": "firebase-telegram-bot",
+  "dependencies": {
+    "firebase-functions": "^4.0.2",
+    "prettier": "^2.7.1"
+  }
+}

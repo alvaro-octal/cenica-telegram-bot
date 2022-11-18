@@ -1,10 +1,8 @@
 import { Context, Telegraf } from 'telegraf';
-
-import { Request, logger, config, https, Response } from 'firebase-functions';
-
-console.log({
-    config: config(),
-});
+import { Request, logger, config, https, Response, pubsub } from 'firebase-functions';
+import { AbstractCommand } from './commands/abstract.command';
+import { CenicaCommand } from './commands/cenica.command';
+import { StartCommand } from './commands/start.command';
 
 const bot = new Telegraf(config().telegram.token, {
     telegram: {
@@ -12,29 +10,28 @@ const bot = new Telegraf(config().telegram.token, {
     },
 });
 
-// error handling
 bot.catch(async (err, ctx: Context): Promise<void> => {
     logger.error('[Bot] Error', err);
     await ctx.reply(`Encountered an error for ${ctx.updateType}`);
 });
 
-// initialize the commands
-bot.command('/start', (ctx: Context) => ctx.reply('Hello! Send any message and I will copy it.'));
-// copy every message and send to the user
-bot.on('message', (ctx: Context) => {
-    if (!ctx.chat) {
-        throw new Error('No chat provided');
-    } else if (!ctx.message) {
-        throw new Error('No message provided');
-    }
+const commands: AbstractCommand[] = [new StartCommand(), new CenicaCommand()];
 
-    return ctx.telegram.copyMessage(ctx.chat.id, ctx.chat.id, ctx.message.message_id);
-});
+for (const command of commands) {
+    bot.command(`/${command.name}`, (ctx: Context) => command.invoke(ctx));
+}
 
-// handle all telegram updates with HTTPs trigger
-exports.echoBot = https.onRequest(async (request: Request, response: Response): Promise<void> => {
+exports.webhook = https.onRequest(async (request: Request, response: Response): Promise<void> => {
     logger.log('Incoming message', request.body);
     await bot.handleUpdate(request.body, response).then(() => {
         return response.sendStatus(200);
     });
 });
+
+exports.scheduledFunctionCrontab = pubsub
+    .schedule('0 10 * * 6')
+    .timeZone('Europe/Madrid')
+    .onRun((): void => {
+        const cenica: CenicaCommand = new CenicaCommand();
+        cenica.execute(bot.telegram);
+    });

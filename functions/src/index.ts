@@ -1,5 +1,5 @@
 import { Context, Telegraf } from 'telegraf';
-import { Request, logger, config, https, Response, pubsub } from 'firebase-functions';
+import { Request, logger, config, Response, region } from 'firebase-functions';
 import { AbstractCommand } from './commands/abstract.command';
 import { CenicaCommand } from './commands/cenica.command';
 import { StartCommand } from './commands/start.command';
@@ -21,17 +21,19 @@ for (const command of commands) {
     bot.command(`/${command.name}`, (ctx: Context) => command.invoke(ctx));
 }
 
-exports.webhook = https.onRequest(async (request: Request, response: Response): Promise<void> => {
-    logger.log('Incoming message', request.body);
-    await bot.handleUpdate(request.body, response).then(() => {
-        return response.sendStatus(200);
-    });
-});
+exports.webhook = region('europe-west6').https.onRequest(
+    async (request: Request, response: Response): Promise<void> => {
+        logger.log('Incoming message', request.body);
+        await bot.handleUpdate(request.body, response).then(() => {
+            return response.sendStatus(200);
+        });
+    },
+);
 
-exports.scheduledFunctionCrontab = pubsub
-    .schedule('0 10 * * 6')
+exports.scheduledFunctionCrontab = region('europe-west6')
+    .pubsub.schedule('0 10 * * 6')
     .timeZone('Europe/Madrid')
-    .onRun((): void => {
+    .onRun(async () => {
         const cenica: CenicaCommand = new CenicaCommand();
-        cenica.execute(bot.telegram);
+        await cenica.execute(bot.telegram);
     });

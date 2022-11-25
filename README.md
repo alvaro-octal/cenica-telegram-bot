@@ -1,4 +1,4 @@
-# firebase-telegram-bot
+# Cenica Telegram Bot
 
 ## Deploy
 

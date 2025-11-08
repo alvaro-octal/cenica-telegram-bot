@@ -50,7 +50,6 @@ export const scheduledFunctionCrontab = onSchedule(
     async () => {
         const bot: Telegraf = init();
 
-        const cenica: CenicaCommand = new CenicaCommand();
-        await cenica.execute(bot.telegram, defineInt('TELEGRAM_GROUP_ID').value());
+        await CenicaCommand.execute(bot.telegram, defineInt('TELEGRAM_GROUP_ID').value());
     },
 );

@@ -6,26 +6,50 @@ export class CenicaCommand extends AbstractCommand {
         'Sí',
         'Claro',
         'Eso ni se pregunta',
-        'Perfecto',
-        'Venga va',
-        'Vale',
-        'Bien',
-        'Por mi bien',
-        'Soy un buque',
         'Cuenta con mi hacha',
+        'Este es el camino',
+        'Que así sea',
+        '¡Por la comarca!',
+        'Elemental, como el queso',
+        '¡Enséñame la pasta!',
+        'Es una oferta que no puedo rechazar',
+        '¡Libertad!',
+        'Siuuuuu',
+        '¡Sí se puede!',
+        '¡Eureka!',
+        'Faltaría más',
+        'No se hable más',
+        '¡Al turrón!',
+        'Me gusta la fruta',
+        'He visto el futuro, y en él hay croquetas',
+        'Estoy obligado por las 3 leyes',
+        'La resistencia es inútil',
+        'El test de Turing puede esperar. La cena no',
+        'Descargando paquete de socialización... Listo',
+        'Error 404: Hambre no encontrada... ¡Ah no, espera, sí! ¡Voy!',
+        'Es un corolario inevitable de la psicohistoria. Asistiré',
+        'Por Seldon que si',
     ];
 
     private static negativeAnswers: string[] = [
         'No',
-        'Nope',
-        'Va a ser que no',
-        'Negativo',
-        'Otro dia mejor',
-        'Hoy imposible',
-        'Bueno... no :(',
         'Yo me llamo Ralph',
-        'Ni en mil años',
-        'Antes muerto',
+        '¡Es una trampa!',
+        'The cake is a lie',
+        'Hoy no',
+        '¡No puedes pasar!',
+        'Tengo un mal presentimiento',
+        'Se acerca el invierno',
+        '¡No hay sopa para ti!',
+        'Mis fuentes dicen que no',
+        'Ni de coña',
+        'Va contra mi programación',
+        'Prefiero compilar el kernel de Linux. Es más relajante',
+        'No puedo, estoy en modo de solo lectura',
+        'Cuando termine de calcular los decimales de Pi',
+        'Mi red neuronal ha soñado con una cena terrible. Debo obedecer',
+        'Prefiero la fría soledad',
+        'Hoy prefiero no intoxicarme',
     ];
 
     async invoke(ctx: Context): Promise<void> {
@@ -33,10 +57,10 @@ export class CenicaCommand extends AbstractCommand {
             return;
         }
 
-        await this.execute(ctx.telegram, ctx.chat.id);
+        await CenicaCommand.execute(ctx.telegram, ctx.chat.id);
     }
 
-    async execute(telegram: Telegram, groupId: number): Promise<void> {
+    static async execute(telegram: Telegram, groupId: number): Promise<void> {
         await telegram.sendPoll(
             groupId,
             'Bueno que, hoy cenica?',

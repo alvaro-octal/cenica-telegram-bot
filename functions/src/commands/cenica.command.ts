@@ -1,6 +1,5 @@
 import { AbstractCommand } from './abstract.command';
 import { Context, Telegram } from 'telegraf';
-import { config } from 'firebase-functions';
 
 export class CenicaCommand extends AbstractCommand {
     private static affirmativeAnswers: string[] = [
@@ -30,17 +29,16 @@ export class CenicaCommand extends AbstractCommand {
     ];
 
     async invoke(ctx: Context): Promise<void> {
-        if (ctx?.message?.from?.id !== Number(config().telegram.owner)) {
-            await ctx.reply('Unauthorized');
+        if (!ctx.chat) {
             return;
         }
 
-        await this.execute(ctx.telegram);
+        await this.execute(ctx.telegram, ctx.chat.id);
     }
 
-    public async execute(telegram: Telegram): Promise<void> {
+    async execute(telegram: Telegram, groupId: number): Promise<void> {
         await telegram.sendPoll(
-            Number(config().telegram.group),
+            groupId,
             'Bueno que, hoy cenica?',
             [
                 CenicaCommand.randomElement(CenicaCommand.affirmativeAnswers),

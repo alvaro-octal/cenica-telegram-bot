@@ -1,39 +1,56 @@
 import { Context, Telegraf } from 'telegraf';
-import { Request, logger, config, Response, region } from 'firebase-functions';
+import { logger } from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
 import { AbstractCommand } from './commands/abstract.command';
 import { CenicaCommand } from './commands/cenica.command';
 import { StartCommand } from './commands/start.command';
+import { onSchedule } from 'firebase-functions/scheduler';
+import { defineInt, defineString } from 'firebase-functions/params';
+import { IdCommand } from './commands/id.command';
 
-const bot = new Telegraf(config().telegram.token, {
-    telegram: {
-        webhookReply: true,
-    },
-});
+let bot: Telegraf;
 
-bot.catch(async (err, ctx: Context): Promise<void> => {
-    logger.error('[Bot] Error', err);
-    await ctx.reply(`Encountered an error for ${ctx.updateType}`);
-});
+function init(): Telegraf {
+    if (bot) {
+        return bot;
+    }
 
-const commands: AbstractCommand[] = [new StartCommand(), new CenicaCommand()];
+    bot = new Telegraf(defineString('TELEGRAM_TOKEN').value(), {
+        telegram: {
+            webhookReply: true,
+        },
+    });
 
-for (const command of commands) {
-    bot.command(`/${command.name}`, (ctx: Context) => command.invoke(ctx));
+    bot.catch(async (err, ctx: Context): Promise<void> => {
+        logger.error('[Bot] Error', err);
+        await ctx.reply(`Encountered an error for ${ctx.updateType}`);
+    });
+
+    return bot;
 }
 
-exports.webhook = region('europe-west6').https.onRequest(
-    async (request: Request, response: Response): Promise<void> => {
-        logger.log('Incoming message', request.body);
-        await bot.handleUpdate(request.body, response).then(() => {
-            return response.sendStatus(200);
-        });
+export const webhook = onRequest({ region: 'europe-west6' }, async (req, res) => {
+    const bot: Telegraf = init();
+
+    const commands: AbstractCommand[] = [new StartCommand(), new CenicaCommand(), new IdCommand()];
+
+    for (const command of commands) {
+        bot.command(command.name, (ctx: Context): Promise<void> => command.invoke(ctx));
+    }
+
+    await bot.handleUpdate(req.body, res);
+});
+
+export const scheduledFunctionCrontab = onSchedule(
+    {
+        schedule: '0 10 * * 6',
+        timeZone: 'Europe/Madrid',
+        region: 'europe-west6',
+    },
+    async () => {
+        const bot: Telegraf = init();
+
+        const cenica: CenicaCommand = new CenicaCommand();
+        await cenica.execute(bot.telegram, defineInt('TELEGRAM_GROUP_ID').value());
     },
 );
-
-exports.scheduledFunctionCrontab = region('europe-west6')
-    .pubsub.schedule('0 10 * * 6')
-    .timeZone('Europe/Madrid')
-    .onRun(async () => {
-        const cenica: CenicaCommand = new CenicaCommand();
-        await cenica.execute(bot.telegram);
-    });

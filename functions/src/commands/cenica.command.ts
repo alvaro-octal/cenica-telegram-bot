@@ -49,6 +49,7 @@ export class CenicaCommand extends AbstractCommand {
         'Prefiero la fría soledad',
         'Hoy prefiero no intoxicarme',
         'Nein Nein Nein Nein!',
+        'Mi mujer me ha dicho "Haz lo que quieras"',
     ];
 
     async invoke(ctx: Context): Promise<void> {
